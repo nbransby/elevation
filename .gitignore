@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.elevation/
+*.log
+.DS_Store

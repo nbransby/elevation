@@ -113,6 +113,18 @@ Rules:
 
 ## 5. Milestones
 
+Progress:
+- [x] M0 — Prototype viewer on mock data (two manual checks still open, see M0's accept list)
+- [ ] M1 — Spike: Claude Code integration points
+- [ ] M2 — Scaffolding, schema and fixtures
+- [ ] M3 — Indexer: git snapshots and changed files
+- [ ] M4 — TypeScript: structure
+- [ ] M5 — TypeScript: call edges and context
+- [ ] M6 — Dogfooding harness
+- [ ] M7 — Viewer on real data
+- [ ] M8 — Service
+- [ ] M9 — Plugin packaging
+
 ### M0 — Prototype viewer on mock data (first deliverable)
 A standalone viewer with hardcoded mock data, for fast iteration on rendering, layout and interaction. No git, no TypeScript analysis, no language servers, no WASM, no service, no database, no plugin, no network calls.
 
@@ -164,10 +176,20 @@ A standalone viewer with hardcoded mock data, for fast iteration on rendering, l
 - Layer filters (pushed / committed / uncommitted) and a base/head toggle.
 
 **Accept:**
-- `pnpm dev` in `packages/viewer` renders every scenario with no backend and no network requests.
-- Layout unit tests cover: two unrelated classes become two buildings; a chain A→B→C stacks C at the bottom and A at the top; a diamond puts its shared dependency at the bottom; a cycle lands on adjacent floors with its upward pipes flagged; the turn sequence moves no existing floor or room between turns.
-- The stress scenario lays out in under 50 ms and renders at 60 fps on a MacBook.
-- Manual check of trackpad controls in Chrome and Safari. Controller unit tests feed synthetic wheel events and check the resulting camera state.
+- [x] `pnpm dev` in `packages/viewer` renders every scenario with no backend and no network requests. (Checked in headless Chromium: all 10 scenarios, no console errors, no non-localhost requests.)
+- [x] Layout unit tests cover: two unrelated classes become two buildings; a chain A→B→C stacks C at the bottom and A at the top; a diamond puts its shared dependency at the bottom; a cycle lands on adjacent floors with its upward pipes flagged; the turn sequence moves no existing floor or room between turns.
+- [x] The stress scenario lays out in under 50 ms (about 8 ms warm in Node; the test asserts < 50 ms).
+- [ ] The stress scenario renders at 60 fps on a MacBook. **Manual:** open `?scenario=stress`, tick Developer → "Render every frame" and "Spin camera", and read `fps` in the debug overlay. (It has about 1,600 draw calls with changed-only pipes; JS-side frame time is about 11 ms on the cloud container's CPU. There's no GPU there, so the frame rate itself couldn't be measured.)
+- [x] Controller unit tests feed synthetic wheel events and check the resulting camera state.
+- [ ] Manual check of trackpad controls in Chrome and Safari.
+
+Deviations in M0:
+- TypeScript is pinned to `~6.0.3`. The current release (7.x) is the native port, whose JS API (`typescript/unstable/*`) doesn't have the classic `LanguageService` or the call-hierarchy methods that M4–M5 name. Revisit at M4.
+- Added `@types/three` and `@types/d3-hierarchy` as dev dependencies: type-only packages for the allowed `three` and `d3-hierarchy`.
+- The riser "core" is a service strip along each building's right-hand side, not the centre, so risers never pass through rooms and stay visible in the front elevation.
+- The layout is computed over the union of all snapshots given to it (every turn of the sequence): floors, rooms and pipes, not only pipes. Each room's treemap cell is sized for the largest size it has in any snapshot, and its box scales within the cell, so growth shows without moving anything. A room renamed on the same floor between turns (matched by `aliases`) keeps its cell. When M7 adds a new turn, the union changes and the scene re-lays out with transitions.
+- The controller also zooms on Safari's `gesturechange` scale and ignores ctrl+wheel while a gesture is active, so pinch works whichever events Safari sends. Pointer drag orbits (left button) and pans (right button or shift), as a fallback for mice.
+- Frames are drawn only when something moves, so an idle viewer uses no GPU. The Developer panel's "Render every frame" and "Spin camera" options are for measuring frame rate.
 
 ### M1 — Spike: confirm the Claude Code integration points
 This is a go/no-go gate. Record the findings in `SPIKE.md`.

@@ -1,0 +1,552 @@
+/* Palette colours (--added, --ink, …) are set on :root by the app from the active three.js palette. */
+:root {
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --panel-bg: rgba(251, 248, 241, 0.92);
+  --panel-border: rgba(47, 43, 38, 0.18);
+  --text: #2f2b26;
+  --muted: #7a7266;
+  --control-bg: #fffdf8;
+  --control-active: #2f2b26;
+  --control-active-text: #fbf8f1;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.06);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --panel-bg: rgba(38, 36, 33, 0.92);
+  --panel-border: rgba(233, 227, 215, 0.16);
+  --text: #e9e3d7;
+  --muted: #a39b8e;
+  --control-bg: #2e2b28;
+  --control-active: #e9e3d7;
+  --control-active-text: #1c1b19;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  font: 13px/1.35 var(--font);
+  color: var(--text);
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+}
+
+.viewport {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.viewport canvas {
+  display: block;
+}
+
+.viewport .labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+button,
+select {
+  font: inherit;
+  color: var(--text);
+  background: var(--control-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--highlight);
+  outline-offset: 1px;
+}
+
+/* ---- Toolbar ------------------------------------------------------------------------------ */
+
+.toolbar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  max-width: calc(100% - 200px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 8px 12px;
+}
+
+.toolbar .brand {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.toolbar .brand .sub {
+  margin-left: 6px;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.toolbar .group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar .group[hidden] {
+  display: none;
+}
+
+.turn-label {
+  min-width: 78px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.segmented {
+  gap: 0 !important;
+}
+
+.segmented .seg {
+  border-radius: 0;
+}
+
+.segmented .seg:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.segmented .seg:last-child {
+  border-radius: 0 6px 6px 0;
+  border-left: none;
+}
+
+.segmented .seg.active {
+  background: var(--control-active);
+  color: var(--control-active-text);
+  border-color: var(--control-active);
+}
+
+.layers label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+/* ---- Swatches (legend and layer toggles) ---------------------------------------------------- */
+
+.swatch {
+  display: inline-block;
+  width: 14px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.swatch.added {
+  background: var(--added);
+}
+.swatch.removed {
+  background: var(--removed);
+}
+.swatch.modified {
+  background: var(--modified);
+}
+.swatch.context {
+  background: var(--unchanged);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.swatch.pushed,
+.layer-pushed .swatch {
+  background: var(--modified);
+}
+.swatch.committed,
+.layer-committed .swatch {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--modified) 0 2.5px,
+    color-mix(in srgb, var(--modified) 28%, var(--paper)) 2.5px 5px
+  );
+}
+.swatch.uncommitted,
+.layer-uncommitted .swatch {
+  background: color-mix(in srgb, var(--modified) 16%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--modified);
+}
+.swatch.ghost {
+  background: color-mix(in srgb, var(--removed) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--removed) 55%, transparent);
+}
+.swatch.pipe {
+  height: 3px;
+  width: 18px;
+  border-radius: 2px;
+}
+.swatch.pipe.added {
+  background: var(--added);
+}
+.swatch.pipe.removed {
+  background: repeating-linear-gradient(90deg, var(--removed) 0 4px, transparent 4px 7px);
+}
+.swatch.pipe.unchanged {
+  background: var(--pipeUnchanged);
+  opacity: 0.5;
+}
+.swatch.pipe.upward {
+  background: var(--upward);
+}
+
+/* ---- Bottom-left: legend and developer panel -------------------------------------------------- */
+
+.bottom-left {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-height: calc(100% - 90px);
+}
+
+.bottom-left details {
+  padding: 6px 10px;
+  max-width: 440px;
+}
+
+.bottom-left summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.legend-cols {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.legend ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.dev-panel {
+  overflow: auto;
+}
+
+.dev-panel fieldset {
+  border: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.dev-panel legend {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 0;
+  margin-bottom: 2px;
+}
+
+.dev-panel label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.dev-panel .slider span {
+  width: 96px;
+}
+
+.dev-panel .slider input {
+  width: 150px;
+}
+
+.dev-panel output {
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+  text-align: right;
+}
+
+/* ---- Debug overlay -------------------------------------------------------------------------- */
+
+.debug {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 10px;
+  font: 11px/1.45 var(--mono);
+  min-width: 170px;
+  pointer-events: none;
+}
+
+.debug div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.debug .k {
+  color: var(--muted);
+}
+
+.debug .v {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Labels in the scene -------------------------------------------------------------------- */
+
+.room-label {
+  font-size: 11px;
+  line-height: 1.2;
+  padding: 1px 5px;
+  margin-bottom: 3px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  color: var(--ink);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.room-label .size {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.floor-label {
+  text-align: right;
+  white-space: nowrap;
+  pointer-events: none;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.floor-label .name {
+  font-weight: 650;
+  font-size: 12px;
+}
+
+.floor-label .cycle {
+  color: var(--upward);
+}
+
+.floor-label .path {
+  font: 10px/1.2 var(--mono);
+  color: var(--muted);
+}
+
+/* ---- Hover tooltip -------------------------------------------------------------------------- */
+
+.tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  pointer-events: none;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+  max-width: 360px;
+}
+
+.tooltip[hidden] {
+  display: none;
+}
+
+.tooltip .name {
+  font-weight: 600;
+}
+
+.tooltip .what,
+.tooltip .path {
+  color: var(--muted);
+}
+
+.tooltip .path {
+  font: 10px/1.3 var(--mono);
+}
+
+/* ---- Source panel --------------------------------------------------------------------------- */
+
+.source-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  width: min(820px, calc(100% - 24px));
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.source-panel[hidden] {
+  display: none;
+}
+
+.source-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 6px;
+}
+
+.source-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.source-head .close {
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 8px;
+}
+
+.source-body {
+  padding: 0 12px 12px;
+  overflow: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.source-body .meta {
+  display: grid;
+  gap: 6px;
+}
+
+.source-body .path {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+}
+
+.chip.change-added {
+  background: color-mix(in srgb, var(--added) 22%, transparent);
+}
+.chip.change-removed {
+  background: color-mix(in srgb, var(--removed) 22%, transparent);
+}
+.chip.change-modified {
+  background: color-mix(in srgb, var(--modified) 25%, transparent);
+}
+
+.aliases code {
+  font-size: 11px;
+}
+
+.source-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  min-height: 0;
+}
+
+.source-col {
+  min-width: 0;
+}
+
+.source-col h3 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.source-col pre {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--paper) 70%, transparent);
+  border: 1px solid var(--panel-border);
+  font: 12px/1.45 var(--mono);
+  overflow: auto;
+  white-space: pre;
+}
+
+.source-col .missing {
+  color: var(--muted);
+  font-style: italic;
+  margin: 4px 0;
+}
+
+@media (max-width: 700px) {
+  .source-cols {
+    grid-template-columns: 1fr;
+  }
+  .toolbar {
+    max-width: calc(100% - 24px);
+  }
+  .debug {
+    display: none;
+  }
+}
