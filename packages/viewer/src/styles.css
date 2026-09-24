@@ -1,7 +1,12 @@
-/* Palette colours (--added, --ink, …) are set on :root by the app from the active three.js palette. */
+/*
+ * Light tokens on :root; dark ones when the OS prefers dark (unless the embedding page stamps
+ * data-theme="light"), or when it stamps data-theme="dark". The app picks its three.js palette by
+ * the same rule and writes the palette colours (--added, --ink, …) inline on :root.
+ */
 :root {
   --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --bg: #f4f0e6;
   --panel-bg: rgba(251, 248, 241, 0.92);
   --panel-border: rgba(47, 43, 38, 0.18);
   --text: #2f2b26;
@@ -10,10 +15,47 @@
   --control-active: #2f2b26;
   --control-active-text: #fbf8f1;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.06);
+  --added: #3f9f5a;
+  --removed: #d0504a;
+  --modified: #e39b2d;
+  --unchanged: #d6d1c6;
+  --upward: #7c5cd6;
+  --pipeUnchanged: #6f685c;
+  --ink: #2f2b26;
+  --paper: #fbf8f1;
+  --highlight: #2563eb;
+  --gutter: 16px;
+  --top: calc(var(--gutter) + env(safe-area-inset-top, 0px));
+  --bottom: calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
   color-scheme: light;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1c1b19;
+    --panel-bg: rgba(38, 36, 33, 0.92);
+    --panel-border: rgba(233, 227, 215, 0.16);
+    --text: #e9e3d7;
+    --muted: #a39b8e;
+    --control-bg: #2e2b28;
+    --control-active: #e9e3d7;
+    --control-active-text: #1c1b19;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.3);
+    --added: #52b86c;
+    --removed: #e2645d;
+    --modified: #f0aa3c;
+    --unchanged: #5d5952;
+    --upward: #a283f5;
+    --pipeUnchanged: #a9a194;
+    --ink: #e9e3d7;
+    --paper: #2a2825;
+    --highlight: #60a5fa;
+    color-scheme: dark;
+  }
+}
+
 :root[data-theme="dark"] {
+  --bg: #1c1b19;
   --panel-bg: rgba(38, 36, 33, 0.92);
   --panel-border: rgba(233, 227, 215, 0.16);
   --text: #e9e3d7;
@@ -22,6 +64,15 @@
   --control-active: #e9e3d7;
   --control-active-text: #1c1b19;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.3);
+  --added: #52b86c;
+  --removed: #e2645d;
+  --modified: #f0aa3c;
+  --unchanged: #5d5952;
+  --upward: #a283f5;
+  --pipeUnchanged: #a9a194;
+  --ink: #e9e3d7;
+  --paper: #2a2825;
+  --highlight: #60a5fa;
   color-scheme: dark;
 }
 
@@ -36,6 +87,7 @@ body {
   overflow: hidden;
   font: 13px/1.35 var(--font);
   color: var(--text);
+  background: var(--bg);
 }
 
 #app {
@@ -98,9 +150,9 @@ summary:focus-visible {
 
 .toolbar {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  max-width: calc(100% - 200px);
+  top: var(--top);
+  left: var(--gutter);
+  max-width: calc(100% - 210px);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -233,18 +285,19 @@ summary:focus-visible {
 
 .bottom-left {
   position: absolute;
-  left: 12px;
-  bottom: 12px;
+  left: var(--gutter);
+  bottom: var(--bottom);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  max-height: calc(100% - 90px);
+  max-height: calc(100% - 110px);
+  max-width: calc(100% - 2 * var(--gutter));
 }
 
 .bottom-left details {
   padding: 6px 10px;
-  max-width: 440px;
+  max-width: min(440px, 100%);
 }
 
 .bottom-left summary {
@@ -321,8 +374,8 @@ summary:focus-visible {
 
 .debug {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: var(--top);
+  right: var(--gutter);
   padding: 6px 10px;
   font: 11px/1.45 var(--mono);
   min-width: 170px;
@@ -422,10 +475,10 @@ summary:focus-visible {
 
 .source-panel {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  bottom: 12px;
-  width: min(820px, calc(100% - 24px));
+  top: var(--top);
+  right: var(--gutter);
+  bottom: var(--bottom);
+  width: min(820px, calc(100% - 2 * var(--gutter)));
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -544,7 +597,7 @@ summary:focus-visible {
     grid-template-columns: 1fr;
   }
   .toolbar {
-    max-width: calc(100% - 24px);
+    max-width: calc(100% - 2 * var(--gutter));
   }
   .debug {
     display: none;

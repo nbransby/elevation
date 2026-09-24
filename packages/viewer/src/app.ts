@@ -64,7 +64,7 @@ export class App {
   private lastDebug = 0;
 
   constructor(root: HTMLElement) {
-    this.palette = this.darkQuery.matches ? DARK_PALETTE : LIGHT_PALETTE;
+    this.palette = this.themePalette();
     this.dev = {
       pipeMode: this.viewOptions.pipeMode,
       floorHeight: this.params.floorHeight,
@@ -128,8 +128,13 @@ export class App {
 
   // ---- Data --------------------------------------------------------------------------------
 
+  /** `?scenario=<id>`, or a bare `#<id>` (the only deep link that reaches an embedded Artifact). */
   private initialScenario(): Scenario {
-    return findScenario(new URLSearchParams(location.search).get("scenario")) ?? SCENARIOS[0]!;
+    return (
+      findScenario(new URLSearchParams(location.search).get("scenario")) ??
+      findScenario(location.hash.slice(1)) ??
+      SCENARIOS[0]!
+    );
   }
 
   private loadScenario(scenario: Scenario, immediate = false) {
@@ -140,10 +145,15 @@ export class App {
     this.select(null);
     this.relayout(immediate);
     this.controller.frame(this.framingBox(), { immediate, yaw: DEFAULT_YAW, pitch: DEFAULT_PITCH });
-    const url = new URL(location.href);
-    url.searchParams.set("scenario", scenario.id);
-    url.searchParams.delete("turn");
-    history.replaceState(null, "", url);
+    try {
+      const url = new URL(location.href);
+      url.searchParams.set("scenario", scenario.id);
+      url.searchParams.delete("turn");
+      url.hash = "";
+      history.replaceState(null, "", url);
+    } catch {
+      // Some embedding frames refuse history changes; the dropdown still shows the scenario.
+    }
     this.updateToolbar();
   }
 
@@ -270,7 +280,17 @@ export class App {
       }
       e.preventDefault();
     });
-    this.darkQuery.addEventListener("change", () => this.applyPalette(this.darkQuery.matches ? DARK_PALETTE : LIGHT_PALETTE));
+    // Follow the OS setting, unless the embedding page stamps an explicit data-theme on the root.
+    const followTheme = () => {
+      const p = this.themePalette();
+      if (p !== this.palette) this.applyPalette(p);
+    };
+    this.darkQuery.addEventListener("change", followTheme);
+    new MutationObserver(followTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    addEventListener("hashchange", () => {
+      const s = findScenario(location.hash.slice(1));
+      if (s && s !== this.scenario) this.loadScenario(s);
+    });
   }
 
   private pickRoom(x: number, y: number): string | null {
@@ -316,9 +336,15 @@ export class App {
     for (const key of ["added", "removed", "modified", "unchanged", "upward", "pipeUnchanged", "ink", "paper", "highlight"] as const) {
       style.setProperty(`--${key}`, hex(p[key]));
     }
-    document.documentElement.dataset.theme = p.dark ? "dark" : "light";
     this.view.setPalette(p, performance.now());
     this.dirty = true;
+  }
+
+  /** Same rule as the stylesheet: an explicit data-theme wins, otherwise prefers-color-scheme. */
+  private themePalette(): Palette {
+    const theme = document.documentElement.dataset.theme;
+    const dark = theme === "dark" || (theme !== "light" && this.darkQuery.matches);
+    return dark ? DARK_PALETTE : LIGHT_PALETTE;
   }
 
   private resize() {

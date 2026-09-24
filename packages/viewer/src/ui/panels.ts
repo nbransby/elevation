@@ -96,7 +96,8 @@ export function legend(): HTMLElement {
   const item = (cls: string, label: string) => h("li", {}, h("span", { class: `swatch ${cls}` }), label);
   return h(
     "details",
-    { class: "legend panel", open: true },
+    // Open on wide screens; collapsed on phones, where it would cover the scene.
+    { class: "legend panel", open: matchMedia("(min-width: 700px)").matches },
     h("summary", {}, "Legend"),
     h(
       "div",

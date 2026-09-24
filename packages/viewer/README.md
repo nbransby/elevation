@@ -13,7 +13,8 @@ pnpm build
 
 ## Scenarios
 
-Pick one from the dropdown, or with `?scenario=<id or number>`:
+Pick one from the dropdown, or with `?scenario=<id or number>` or a bare `#<id>` (the only deep link that reaches the
+viewer inside a claude.ai Artifact):
 
 | # | id | |
 |---|---|---|
